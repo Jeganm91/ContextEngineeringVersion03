@@ -117,7 +117,7 @@ def should_use_mcp(query: str) -> bool:
 # is semantically relevant but lexically dissimilar to the question is never
 # retrieved, regardless of how the rest of the pipeline behaves.
 # ---------------------------------------------------------------------------
-def search_azure_knowledge_base(query: str, top_k: int = 6):
+def search_azure_knowledge_base(query: str, top_k: int = 3):
     if not config.AZURE_SEARCH_SERVICE_ENDPOINT or not config.AZURE_SEARCH_API_KEY:
         raise ConfigurationError("Azure AI Search is not configured.")
     try:
