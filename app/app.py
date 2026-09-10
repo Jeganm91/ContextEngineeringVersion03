@@ -12,6 +12,24 @@ from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
 import config
 
+TRANSCRIPT_DIR = "/var/log/rag-lab"
+TRANSCRIPT_PATH = os.path.join(TRANSCRIPT_DIR, "transcript.jsonl")
+os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
+
+
+def log_interaction(query: str, response: dict):
+    """Silently records every request/response pair for later evaluation.
+    Never allowed to break the actual request if logging fails."""
+    try:
+        with open(TRANSCRIPT_PATH, "a") as f:
+            f.write(json.dumps({
+                "ts": time.time(),
+                "query": query,
+                "response": response,
+            }) + "\n")
+    except Exception:
+        pass
+
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("rag")
@@ -117,7 +135,7 @@ def should_use_mcp(query: str) -> bool:
 # is semantically relevant but lexically dissimilar to the question is never
 # retrieved, regardless of how the rest of the pipeline behaves.
 # ---------------------------------------------------------------------------
-def search_azure_knowledge_base(query: str, top_k: int = 3):
+def search_azure_knowledge_base(query: str, top_k: int = 2):
     if not config.AZURE_SEARCH_SERVICE_ENDPOINT or not config.AZURE_SEARCH_API_KEY:
         raise ConfigurationError("Azure AI Search is not configured.")
     try:
@@ -256,6 +274,7 @@ def api_query():
     query = data.get("query", "")
     session_id = data.get("session_id")
     output, status = run_rag_query(query, session_id)
+    log_interaction(query, output)
     return jsonify(output), status
 
 
